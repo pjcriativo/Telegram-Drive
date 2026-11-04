@@ -181,8 +181,24 @@ if (typeof window !== 'undefined') {
             return { approval_url: 'https://www.paypal.com/', expires_at: Math.floor(Date.now() / 1000) + 3600 };
           }
 
-          // Desktop lifecycle
+          // Desktop lifecycle & app info
           if (command === 'cmd_desktop_frontend_ready' || command === 'cmd_desktop_frontend_unready') return null;
+          if (command === 'cmd_get_installation_info') {
+            return { managedByPackageManager: false, packageManager: null };
+          }
+          if (command === 'cmd_get_desktop_preferences') return { theme: 'system', language: null };
+          if (command === 'cmd_update_desktop_preferences') return null;
+          if (command === 'cmd_get_bandwidth') return { upload: 0, download: 0 };
+          if (command === 'cmd_check_latency') return { latency_ms: 0 };
+          if (command === 'cmd_detect_vpn') return { detected: false };
+          if (command === 'cmd_get_pending_share_count') return 0;
+          if (command === 'cmd_get_notification_permission') return 'denied';
+          if (command === 'cmd_request_notification_permission') return 'denied';
+          if (command === 'cmd_get_android_authentication_available') return false;
+          if (command === 'cmd_android_authenticate') return false;
+          if (command === 'cmd_configure_android_privacy') return null;
+          if (command === 'cmd_logout') return null;
+          if (command === 'cmd_get_pending_android_transfer_action') return null;
 
           // Transfer / file operations — return safe no-ops in web preview
           if (command === 'cmd_cancel_transfer') return null;
@@ -268,6 +284,111 @@ if (typeof window !== 'undefined') {
           if (command === 'cmd_auth_sign_in') return { success: false, next_step: 'password' };
           if (command === 'cmd_auth_check_password') return { success: true };
 
+          // Transfer list (new API names)
+          if (command === 'cmd_transfer_list') return [];
+          if (command === 'cmd_transfer_activity') return [];
+          if (command === 'cmd_transfer_clear_terminal') return null;
+          if (command === 'cmd_transfer_adopt_legacy') return null;
+          if (command === 'cmd_transfer_discard_legacy') return null;
+          if (command === 'cmd_transfer_enqueue_many') return null;
+
+          // Folder / file creation & sharing
+          if (command === 'cmd_create_folder') return null;
+          if (command === 'cmd_create_group') return null;
+          if (command === 'cmd_get_groups') return [];
+          if (command === 'cmd_toggle_folder_visibility') return null;
+          if (command === 'cmd_create_share') return null;
+          if (command === 'cmd_list_shares') return [];
+          if (command === 'cmd_export_folder_invite') return null;
+          if (command === 'cmd_validate_dropped_paths') return [];
+          if (command === 'cmd_zip_folder') return null;
+          if (command === 'cmd_stage_android_upload') return null;
+          if (command === 'cmd_stage_file_passphrase') return null;
+
+          // Encryption
+          if (command === 'cmd_get_encryption_capabilities') return { supported: false };
+          if (command === 'cmd_get_encryption_settings') return { mode: 'none', keyId: null };
+          if (command === 'cmd_update_encryption_settings') return null;
+          if (command === 'cmd_get_crypto_inventory') return { keys: [] };
+          if (command === 'cmd_get_file_encryption_info') return null;
+          if (command === 'cmd_generate_recovery_key') return null;
+          if (command === 'cmd_get_vault_status') return { locked: true, available: false };
+          if (command === 'cmd_unlock_vault') throw new Error('Vault indisponível no modo web.');
+          if (command === 'cmd_export_vault_recovery') return null;
+          if (command === 'cmd_verify_vault_recovery') return null;
+
+          // Transcode / streaming
+          if (command === 'cmd_get_transcode_capabilities') return { supported: false };
+          if (command === 'cmd_get_detailed_transcode_cache') return { entries: [], totalBytes: 0 };
+          if (command === 'cmd_clear_transcode_cache') return null;
+          if (command === 'cmd_prepare_transcoded_stream') return null;
+          if (command === 'cmd_get_stream_info') return null;
+          if (command === 'cmd_get_master_playlist_info') return null;
+          if (command === 'cmd_get_video_metadata') return null;
+          if (command === 'cmd_get_thumbnail') return null;
+          if (command === 'cmd_get_display_preview') return null;
+          if (command === 'cmd_get_android_playback_history') return [];
+          if (command === 'cmd_playback_read') return null;
+          if (command === 'cmd_playback_mutate') return null;
+
+          // Offline packs
+          if (command === 'cmd_offline_packs_list') return [];
+          if (command === 'cmd_offline_pack_create') return null;
+          if (command === 'cmd_offline_pack_action') return null;
+          if (command === 'cmd_get_offline_cache_status') return { available: false };
+          if (command === 'cmd_get_offline_files') return [];
+          if (command === 'cmd_list_cached_files') return [];
+          if (command === 'cmd_get_cached_files') return [];
+          if (command === 'cmd_get_cached_variants') return [];
+
+          // Archive / extract
+          if (command === 'cmd_list_archive_contents') return { entries: [] };
+          if (command === 'cmd_extract_archive_entry') return null;
+
+          // Workspace (rich file ops)
+          if (command === 'cmd_workspace_index') return null;
+          if (command === 'cmd_workspace_read') return null;
+          if (command === 'cmd_workspace_mutate') return null;
+          if (command === 'cmd_workspace_asset') return null;
+
+          // Proxy / network
+          if (command === 'cmd_reconnect_with_network_settings') return null;
+          if (command === 'cmd_get_proxy_status') return { active: false };
+          if (command === 'cmd_test_proxy_traffic') return { success: false };
+
+          // Sync
+          if (command === 'cmd_add_sync_pair') return null;
+          if (command === 'cmd_remove_sync_pair') return null;
+          if (command === 'cmd_update_sync_pair') return null;
+          if (command === 'cmd_preview_sync_pair') return null;
+          if (command === 'cmd_set_sync_pair_active') return null;
+          if (command === 'cmd_set_sync_scanner') return null;
+          if (command === 'cmd_toggle_sync') return null;
+          if (command === 'cmd_get_sync_conflicts') return [];
+          if (command === 'cmd_resolve_conflict') return null;
+
+          // API settings / WebDAV
+          if (command === 'cmd_get_api_settings') return {};
+          if (command === 'cmd_update_api_settings') return null;
+          if (command === 'cmd_get_webdav_settings') return { enabled: false };
+          if (command === 'cmd_update_webdav_settings') return null;
+          if (command === 'cmd_regenerate_webdav_token') return null;
+          if (command === 'cmd_regenerate_api_key') return null;
+
+          // Storage insight / quota
+          if (command === 'cmd_get_storage_insight') return { used: 0, total: 0 };
+          if (command === 'cmd_set_weekly_quota') return null;
+
+          // System diagnostics
+          if (command === 'cmd_get_system_diagnostics') return { entries: [] };
+
+          // File activity
+          if (command === 'cmd_get_file_activity') return [];
+
+          // Auth extras
+          if (command === 'cmd_auth_cancel_code') return null;
+          if (command === 'cmd_auth_resend_code') return { status: 'code_required', delivery: 'telegram_app', codeLength: 5, numericCode: true };
+
           // Dialog / opener / shell mocks
           if (command === 'plugin:opener|open_url' || command === 'plugin:shell|open') {
             if (typeof window !== 'undefined' && (args.path || args.url)) {
@@ -276,7 +397,10 @@ if (typeof window !== 'undefined') {
             return true;
           }
 
-          return null;
+          // Unknown command — throw so .catch() handlers in the app handle it
+          // gracefully instead of receiving null and crashing on property access.
+          console.warn(`[web-fallback] Unhandled invoke command: ${command}`, args);
+          throw new Error(`[web-preview] Command not available in browser: ${command}`);
         },
       };
     }
