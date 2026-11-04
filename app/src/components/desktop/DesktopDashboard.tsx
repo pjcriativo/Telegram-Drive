@@ -36,6 +36,7 @@ import { RenameFolderModal } from './dashboard/RenameFolderModal';
 import { RenameFileModal } from './dashboard/RenameFileModal';
 import { DesktopAdBanner } from './dashboard/DesktopAdBanner';
 import { RemoteUploadModal } from './dashboard/RemoteUploadModal';
+import { GoogleDriveModal } from './dashboard/GoogleDriveModal';
 import { KeyboardShortcutsDialog } from './dashboard/KeyboardShortcutsDialog';
 import { DriveConceptTour } from './dashboard/DriveConceptTour';
 import { LazyFeatureBoundary } from '../shared/LazyFeatureBoundary';
@@ -123,6 +124,7 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
     const [moveRequest, setMoveRequest] = useState<{ ownerId: string; files: TelegramFile[] } | null>(null);
     const showMoveModal = moveRequest?.ownerId === accountId;
     const [showSettings, setShowSettings] = useState(false);
+    const [showGoogleDriveModal, setShowGoogleDriveModal] = useState(false);
     const settingsModuleRequested = useRef(false);
     if (showSettings) settingsModuleRequested.current = true;
     const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('general');
@@ -890,6 +892,7 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
                 createFolderRequest={createFolderRequest}
                 activeSmartView={activeSmartView}
                 onSmartViewChange={setActiveSmartView}
+                onOpenGoogleDriveModal={() => setShowGoogleDriveModal(true)}
             />
 
             <section aria-label={currentViewName} className="flex min-w-0 flex-1 flex-col">
@@ -897,6 +900,7 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
                 <TopBar
                     currentFolderName={currentViewName}
                     selectedIds={selectedIds}
+                    onOpenGoogleDriveModal={() => setShowGoogleDriveModal(true)}
                     onShowMoveModal={handleOpenBulkMove}
                     onBulkDownload={handleBulkDownload}
                     onBulkDelete={handleBulkDelete}
@@ -1030,6 +1034,7 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
                 </LazyFeatureBoundary>
             )}
 
+            <GoogleDriveModal isOpen={showGoogleDriveModal} onClose={() => setShowGoogleDriveModal(false)} onAccountChanged={() => { void queryClient.invalidateQueries(); void handleManualSync(); }} />
             {showShortcuts && <KeyboardShortcutsDialog onClose={() => setShowShortcuts(false)} />}
 
             {settingsLoaded && supporterStatus.state !== 'loading' && !settings.driveTourSeen && (

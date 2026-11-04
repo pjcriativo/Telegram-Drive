@@ -182,6 +182,19 @@ class GoogleDriveService {
         return this.state.quota;
     }
 
+    public setQuotaLimit(totalBytes: number): void {
+        this.state.quota.total = totalBytes;
+        this.saveState();
+    }
+
+    public setCustomUser(user: GoogleDriveUser): void {
+        this.currentUser = user;
+        try {
+            localStorage.setItem(GDRIVE_USER_KEY, JSON.stringify(user));
+        } catch {}
+        this.saveState();
+    }
+
     public setDemoMode(): void {
         this.state.mode = 'demo';
         this.currentUser = {

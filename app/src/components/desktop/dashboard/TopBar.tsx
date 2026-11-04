@@ -19,6 +19,7 @@ import {
     Sun,
     Trash2,
     UploadCloud,
+    Cloud,
     X,
     ZoomIn,
     ZoomOut,
@@ -58,6 +59,7 @@ interface TopBarProps {
     onShowHelp: () => void;
     searchFilters: FileSearchFilters;
     onSearchFiltersChange: (filters: FileSearchFilters) => void;
+    onOpenGoogleDriveModal?: () => void;
 }
 
 export function TopBar({
@@ -86,6 +88,7 @@ export function TopBar({
     onShowHelp,
     searchFilters,
     onSearchFiltersChange,
+    onOpenGoogleDriveModal,
 }: TopBarProps) {
     const { theme, toggleTheme } = useTheme();
     const { t } = useTranslation();
@@ -230,6 +233,15 @@ export function TopBar({
                             </div>
                         )}
 
+                        {onOpenGoogleDriveModal && (
+                            <Button
+                                onClick={onOpenGoogleDriveModal}
+                                leadingIcon={<Cloud className="h-3.5 w-3.5 text-blue-400" />}
+                                className="border border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                            >
+                                Google Drive (5 TB)
+                            </Button>
+                        )}
                         <Button
                             variant="primary"
                             onClick={onUploadClick}

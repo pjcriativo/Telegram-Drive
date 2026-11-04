@@ -116,12 +116,13 @@ interface SidebarProps {
     createFolderRequest?: number;
     activeSmartView?: SmartView | null;
     onSmartViewChange?: (view: SmartView | null) => void;
+    onOpenGoogleDriveModal?: () => void;
 }
 
 export function Sidebar({
     folders, groups = [], activeFolderId, setActiveFolderId, onDelete, onRename, onToggleVisibility, onExportInvite, onCreate,
     isSyncing, isConnected, onSync, onLogout, bandwidth,
-    onAssignFolderToGroup, onCreateGroup, onUpdateGroup, onDeleteGroup, createFolderRequest = 0, activeSmartView = null, onSmartViewChange
+    onAssignFolderToGroup, onCreateGroup, onUpdateGroup, onDeleteGroup, createFolderRequest = 0, activeSmartView = null, onSmartViewChange, onOpenGoogleDriveModal
 }: SidebarProps) {
     const [showNewFolderInput, setShowNewFolderInput] = useState(false);
     const { t } = useTranslation();
@@ -462,9 +463,16 @@ export function Sidebar({
                     </>
                 ) : (
                     <>
-                        <div className="flex items-center gap-2 text-metadata text-app-text-secondary">
-                            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-app-success' : 'bg-app-danger'}`}></div>
-                            <span>{isConnected ? (isWeb ? 'Google Drive Conectado' : t('common.connected_telegram')) : t('common.disconnected_telegram')}</span>
+                        <div 
+                            onClick={isWeb ? onOpenGoogleDriveModal : undefined}
+                            className={`flex items-center justify-between text-metadata text-app-text-secondary ${isWeb ? 'cursor-pointer hover:text-app-text py-1 px-1.5 -mx-1.5 rounded-lg hover:bg-app-surface-sunken transition' : ''}`}
+                            title={isWeb ? "Clique para gerenciar a conta Google Drive Pro (5 TB)" : undefined}
+                        >
+                            <div className="flex items-center gap-2">
+                                <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-app-success' : 'bg-app-danger'}`}></div>
+                                <span>{isConnected ? (isWeb ? 'Google Drive (5 TB Pro)' : t('common.connected_telegram')) : t('common.disconnected_telegram')}</span>
+                            </div>
+                            {isWeb && <span className="text-[10px] font-semibold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">Configurar</span>}
                         </div>
 
                         <div className="flex gap-2">
