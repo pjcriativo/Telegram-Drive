@@ -201,7 +201,16 @@ if (typeof window !== 'undefined') {
           }
           if (command === 'cmd_get_desktop_preferences') return { theme: 'system', language: null };
           if (command === 'cmd_update_desktop_preferences') return null;
-          if (command === 'cmd_get_bandwidth') return { upload: 0, download: 0 };
+          if (command === 'cmd_get_bandwidth') {
+            const quota = googleDriveService.getQuota();
+            return {
+              date: new Date().toISOString().slice(0, 10),
+              up_bytes: quota.used,
+              down_bytes: 0,
+              limit_bytes: quota.total,
+              period: 'weekly',
+            };
+          }
           if (command === 'cmd_check_latency') return { latency_ms: 0 };
           if (command === 'cmd_detect_vpn') return { detected: false };
           if (command === 'cmd_get_pending_share_count') return 0;
