@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, Sun, Moon, ExternalLink, X, Heart } from "lucide-react";
+import { Sun, Moon, ExternalLink, X, Heart, Cloud, HardDrive, Key, ChevronDown, ChevronUp, Sparkles, CheckCircle2 } from "lucide-react";
 import { load } from '@tauri-apps/plugin-store';
 import { useTheme } from '../../context/ThemeContext';
 import { open } from '@tauri-apps/plugin-shell';
+import { toast } from 'sonner';
+import { googleDriveService } from '../../services/googleDriveService';
 import {
     AuthCodeStep,
     AuthMethodStep,
@@ -38,42 +40,197 @@ function AuthThemeToggle() {
 export function AuthWizard({ onLogin }: { onLogin: () => void }) {
     const { t } = useTranslation();
     const isNativeTauri = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window) && !(window as any).__TAURI_IS_WEB_FALLBACK__;
-    const [dismissedWebNotice, setDismissedWebNotice] = useState(() => {
+    const [useTelegramMode, setUseTelegramMode] = useState(false);
+    const [googleClientId, setGoogleClientId] = useState(() => {
         try {
-            return sessionStorage.getItem('dismissed_web_notice') === 'true';
+            return localStorage.getItem('gdrive_client_id') || (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '';
         } catch {
-            return false;
+            return '';
         }
     });
+    const [directToken, setDirectToken] = useState('');
+    const [showConfig, setShowConfig] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(false);
 
-    const handleDismissWebNotice = () => {
+    const handleEnterDemoCloud = async () => {
+        setIsConnecting(true);
         try {
-            sessionStorage.setItem('dismissed_web_notice', 'true');
-        } catch {}
-        setDismissedWebNotice(true);
+            googleDriveService.setDemoMode();
+            const store = await load('config.json');
+            await store.set('api_id', '99999999');
+            await store.set('session_active', true);
+            await store.save();
+            toast.success('Entrando no Telegram Drive Nuvem (Google Drive)...');
+            onLogin();
+        } catch (e) {
+            console.error('Falha ao iniciar modo nuvem:', e);
+            toast.error('Erro ao iniciar sessão.');
+        } finally {
+            setIsConnecting(false);
+        }
     };
 
-    if (!isNativeTauri && !dismissedWebNotice) {
+    const handleGoogleAuth = async () => {
+        if (!googleClientId.trim()) {
+            setShowConfig(true);
+            toast.info('Informe o seu Google OAuth Client ID nas configurações abaixo.');
+            return;
+        }
+        setIsConnecting(true);
+        try {
+            localStorage.setItem('gdrive_client_id', googleClientId.trim());
+            const res = await googleDriveService.requestGoogleAuth(googleClientId.trim());
+            if (res.success) {
+                const store = await load('config.json');
+                await store.set('api_id', '99999999');
+                await store.set('session_active', true);
+                await store.save();
+                toast.success('Conectado ao Google Drive com sucesso!');
+                onLogin();
+            } else {
+                toast.error(res.error || 'Falha ao autenticar com o Google.');
+            }
+        } catch (e: any) {
+            toast.error(e?.message || 'Erro ao conectar ao Google Drive.');
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+
+    const handleDirectTokenLogin = async () => {
+        if (!directToken.trim()) {
+            toast.error('Informe um token de acesso válido.');
+            return;
+        }
+        setIsConnecting(true);
+        try {
+            googleDriveService.setAccessToken(directToken.trim());
+            const store = await load('config.json');
+            await store.set('api_id', '99999999');
+            await store.set('session_active', true);
+            await store.save();
+            toast.success('Token do Google Drive configurado!');
+            onLogin();
+        } catch (e: any) {
+            toast.error(e?.message || 'Erro ao salvar token.');
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+
+    if (!isNativeTauri && !useTelegramMode) {
         return (
             <div className="auth-gradient flex h-full items-center justify-center p-6 text-center text-app-text">
-              <div className="quiet-raised max-w-md p-6">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-container bg-app-accent/15 text-app-accent">
-                    <ShieldCheck className="h-6 w-6 text-app-accent" />
+              <AuthThemeToggle />
+              <div className="quiet-raised max-w-lg w-full p-7 text-left space-y-6">
+                <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-500/20 via-green-500/20 to-yellow-500/20 text-blue-400 border border-app-border">
+                        <Cloud className="h-7 w-7 text-app-accent" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold text-app-text flex items-center gap-2">
+                            Telegram Drive <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-app-accent/20 text-app-accent border border-app-accent/30">Nuvem</span>
+                        </h1>
+                        <p className="text-sm text-app-text-secondary mt-0.5">
+                            Armazenamento em nuvem alimentado por Google Drive
+                        </p>
+                    </div>
                 </div>
-                <h1 className="text-app-title font-semibold text-app-text">{t('auth.desktop_required')}</h1>
-                <p className="mx-auto mt-2 max-w-sm text-ui leading-relaxed text-app-text-secondary">
-                    {t('auth.desktop_required_desc')}
-                </p>
-                <div className="mt-5 rounded-control border border-app-border bg-app-surface-sunken/40 p-3 text-metadata text-app-text-secondary">
-                    {t('auth.open_window_prompt')}
+
+                <div className="rounded-xl border border-app-border bg-app-surface-sunken/50 p-4 space-y-2 text-sm text-app-text-secondary">
+                    <div className="flex items-start gap-2.5">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <span>Interface moderna com visualização e gerenciamento de arquivos na nuvem.</span>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <span>Arquivos e pastas persistidos diretamente com Google Drive API.</span>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <span>Funciona 100% no navegador (Vercel) sem necessidade do app desktop.</span>
+                    </div>
                 </div>
-                <div className="mt-5">
+
+                <div className="space-y-3">
                     <button
                         type="button"
-                        onClick={handleDismissWebNotice}
-                        className="quiet-control w-full rounded-control bg-app-accent px-4 py-2.5 text-sm font-medium text-app-accent-contrast shadow transition hover:opacity-90"
+                        onClick={handleEnterDemoCloud}
+                        disabled={isConnecting}
+                        className="quiet-control w-full flex items-center justify-center gap-2 rounded-xl bg-app-accent px-5 py-3 text-sm font-semibold text-app-accent-contrast shadow-lg hover:opacity-95 transition disabled:opacity-50"
                     >
-                        Explorar Interface (Modo Demonstração)
+                        <Sparkles className="h-4 w-4" />
+                        <span>Acessar Modo Nuvem (Google Drive Instantâneo)</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleGoogleAuth}
+                        disabled={isConnecting}
+                        className="quiet-control w-full flex items-center justify-center gap-2 rounded-xl border border-app-border bg-app-surface-raised px-5 py-2.5 text-sm font-medium text-app-text hover:bg-app-surface-sunken transition disabled:opacity-50"
+                    >
+                        <HardDrive className="h-4 w-4 text-blue-400" />
+                        <span>Conectar com Google Drive (OAuth)</span>
+                    </button>
+                </div>
+
+                {/* Configurações Avançadas de Credenciais */}
+                <div className="border-t border-app-border/60 pt-4">
+                    <button
+                        type="button"
+                        onClick={() => setShowConfig(!showConfig)}
+                        className="text-xs text-app-text-secondary hover:text-app-text flex items-center justify-between w-full font-medium"
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <Key className="h-3.5 w-3.5" />
+                            Configurações de Credenciais Google Cloud
+                        </span>
+                        {showConfig ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    </button>
+
+                    {showConfig && (
+                        <div className="mt-3 space-y-3 rounded-lg border border-app-border/60 bg-app-surface-sunken/30 p-3.5 text-xs text-app-text">
+                            <div>
+                                <label className="block font-medium mb-1 text-app-text-secondary">Google OAuth Client ID:</label>
+                                <input
+                                    type="text"
+                                    value={googleClientId}
+                                    onChange={(e) => setGoogleClientId(e.target.value)}
+                                    placeholder="ex: 123456...apps.googleusercontent.com"
+                                    className="w-full rounded border border-app-border bg-app-surface px-2.5 py-1.5 text-xs text-app-text outline-none focus:border-app-accent"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block font-medium mb-1 text-app-text-secondary">Ou Token de Acesso (Bearer Token):</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="password"
+                                        value={directToken}
+                                        onChange={(e) => setDirectToken(e.target.value)}
+                                        placeholder="ya29.a0..."
+                                        className="w-full rounded border border-app-border bg-app-surface px-2.5 py-1.5 text-xs text-app-text outline-none focus:border-app-accent"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleDirectTokenLogin}
+                                        className="shrink-0 px-3 py-1.5 rounded bg-app-accent text-app-accent-contrast font-medium text-xs hover:opacity-90"
+                                    >
+                                        Conectar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="pt-2 text-center">
+                    <button
+                        type="button"
+                        onClick={() => setUseTelegramMode(true)}
+                        className="text-xs text-app-text-secondary/70 hover:text-app-text transition underline"
+                    >
+                        Voltar para login via Telegram
                     </button>
                 </div>
               </div>

@@ -126,6 +126,7 @@ export function Sidebar({
     const [showNewFolderInput, setShowNewFolderInput] = useState(false);
     const { t } = useTranslation();
     const { settings, updateSetting } = useSettings();
+    const isWeb = typeof window !== 'undefined' && (!('__TAURI_INTERNALS__' in window) || Boolean((window as any).__TAURI_IS_WEB_FALLBACK__));
 
     // Grouping States
     const [activeGroupId, setActiveGroupId] = useState<number | null | 'all'>('all');
@@ -178,7 +179,12 @@ export function Sidebar({
                 <div className="flex items-center gap-2">
                     <img src="/logo.svg" className={settings.sidebarCollapsed ? 'h-[22px] w-[22px]' : 'h-6 w-6'} alt={i18n.t('common.app_title')} />
                     {!settings.sidebarCollapsed && (
-                        <span className="text-app-title font-semibold tracking-[-0.01em] text-app-text">{t('common.app_title')}</span>
+                        <div className="flex flex-col">
+                            <span className="text-app-title font-semibold tracking-[-0.01em] text-app-text">{t('common.app_title')}</span>
+                            {isWeb && (
+                                <span className="text-[10px] text-blue-400 font-medium leading-none">Google Drive Nuvem</span>
+                            )}
+                        </div>
                     )}
                 </div>
                 <button
@@ -458,7 +464,7 @@ export function Sidebar({
                     <>
                         <div className="flex items-center gap-2 text-metadata text-app-text-secondary">
                             <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-app-success' : 'bg-app-danger'}`}></div>
-                            <span>{isConnected ? t('common.connected_telegram') : t('common.disconnected_telegram')}</span>
+                            <span>{isConnected ? (isWeb ? 'Google Drive Conectado' : t('common.connected_telegram')) : t('common.disconnected_telegram')}</span>
                         </div>
 
                         <div className="flex gap-2">
