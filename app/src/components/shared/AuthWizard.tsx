@@ -37,14 +37,28 @@ function AuthThemeToggle() {
 }
 export function AuthWizard({ onLogin }: { onLogin: () => void }) {
     const { t } = useTranslation();
-    const isBrowser = typeof window !== 'undefined' && !('__TAURI_INTERNALS__' in window);
+    const isNativeTauri = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window) && !(window as any).__TAURI_IS_WEB_FALLBACK__;
+    const [dismissedWebNotice, setDismissedWebNotice] = useState(() => {
+        try {
+            return sessionStorage.getItem('dismissed_web_notice') === 'true';
+        } catch {
+            return false;
+        }
+    });
 
-    if (isBrowser) {
+    const handleDismissWebNotice = () => {
+        try {
+            sessionStorage.setItem('dismissed_web_notice', 'true');
+        } catch {}
+        setDismissedWebNotice(true);
+    };
+
+    if (!isNativeTauri && !dismissedWebNotice) {
         return (
             <div className="auth-gradient flex h-full items-center justify-center p-6 text-center text-app-text">
               <div className="quiet-raised max-w-md p-6">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-container bg-app-danger/10">
-                    <ShieldCheck className="h-6 w-6 text-app-danger" />
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-container bg-app-accent/15 text-app-accent">
+                    <ShieldCheck className="h-6 w-6 text-app-accent" />
                 </div>
                 <h1 className="text-app-title font-semibold text-app-text">{t('auth.desktop_required')}</h1>
                 <p className="mx-auto mt-2 max-w-sm text-ui leading-relaxed text-app-text-secondary">
@@ -53,9 +67,18 @@ export function AuthWizard({ onLogin }: { onLogin: () => void }) {
                 <div className="mt-5 rounded-control border border-app-border bg-app-surface-sunken/40 p-3 text-metadata text-app-text-secondary">
                     {t('auth.open_window_prompt')}
                 </div>
+                <div className="mt-5">
+                    <button
+                        type="button"
+                        onClick={handleDismissWebNotice}
+                        className="quiet-control w-full rounded-control bg-app-accent px-4 py-2.5 text-sm font-medium text-app-accent-contrast shadow transition hover:opacity-90"
+                    >
+                        Explorar Interface (Modo Demonstração)
+                    </button>
+                </div>
               </div>
             </div>
-        )
+        );
     }
 
     const [step, setStep] = useState<AuthStep>("setup");
